@@ -1,0 +1,32 @@
+services:
+  db:
+    image: mariadb:11
+    container_name: farmoria-db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: farmoria
+      MYSQL_USER: farmoria_user
+      MYSQL_PASSWORD: farmoria_pass
+      MYSQL_ROOT_PASSWORD: root_pass
+    volumes:
+      - db_data:/var/lib/mysql
+
+  wordpress:
+    image: wordpress:php8.2-apache
+    container_name: farmoria-wordpress
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    environment:
+      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_NAME: farmoria
+      WORDPRESS_DB_USER: farmoria_user
+      WORDPRESS_DB_PASSWORD: farmoria_pass
+    volumes:
+      - wordpress_data:/var/www/html
+    depends_on:
+      - db
+
+volumes:
+  db_data:
+  wordpress_data:
