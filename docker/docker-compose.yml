@@ -12,7 +12,10 @@ services:
       - db_data:/var/lib/mysql
 
   wordpress:
-    image: wordpress:php8.2-apache
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: farmoria-wordpress:latest
     container_name: farmoria-wordpress
     restart: unless-stopped
     ports:
