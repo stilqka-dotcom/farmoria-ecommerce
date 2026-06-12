@@ -8,6 +8,8 @@ spec:
   selector:
     matchLabels:
       app: mariadb
+  strategy:
+    type: Recreate
   template:
     metadata:
       labels:
@@ -18,6 +20,25 @@ spec:
           image: mariadb:11
           ports:
             - containerPort: 3306
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "500m"
+              memory: "1Gi"
+
+          readinessProbe:
+            tcpSocket:
+              port: 3306
+            initialDelaySeconds: 20
+            periodSeconds: 10
+
+          livenessProbe:
+            tcpSocket:
+              port: 3306
+            initialDelaySeconds: 60
+            periodSeconds: 20
           env:
             - name: MYSQL_DATABASE
               valueFrom:
@@ -51,3 +72,4 @@ spec:
         - name: mariadb-storage
           persistentVolumeClaim:
             claimName: mariadb-pvc
+      
