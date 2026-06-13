@@ -21,10 +21,15 @@ jobs:
 
       - name: Build Docker Image
         run: |
-          docker build -t stilyan03/farmoria-wordpress:latest .
+          docker build -t stilyan03/farmoria-wordpress:latest ./docker
 
       - name: Push Docker Image
         run: |
           docker push stilyan03/farmoria-wordpress:latest
+
+
+
+
+
 
 
