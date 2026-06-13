@@ -57,3 +57,13 @@ spec:
                 secretKeyRef:
                   name: farmoria-secrets
                   key: MYSQL_PASSWORD
+            - name: WP_REDIS_HOST
+              value: redis
+       
+            - name: WP_REDIS_PORT
+              value: "6379"
+            
+            - name: WORDPRESS_CONFIG_EXTRA
+              value: |
+                define('WP_REDIS_HOST', 'redis');
+                define('WP_REDIS_PORT', 6379);
