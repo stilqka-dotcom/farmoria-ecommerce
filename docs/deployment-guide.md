@@ -1,80 +1,306 @@
-# Farmoria Deployment Guide
+# Deployment Guide
 
-## Prerequisites
+## Overview
 
-Install Docker Desktop, enable Kubernetes, install kubectl and Git.
+This guide describes how to deploy the Farmoria Ecommerce project using either Docker Compose or Kubernetes.
 
-## Clone
+The Docker deployment is intended for local development, while the Kubernetes deployment demonstrates a cloud-native environment running locally.
+
+---
+
+# Prerequisites
+
+Before starting, install:
+
+- Git
+- Docker Desktop
+- Docker Compose
+- Kubernetes
+- kubectl
+
+Verify the installation:
+
+```bash
+git --version
+docker --version
+docker compose version
+kubectl version --client
+kubectl cluster-info
+```
+
+---
+
+# Clone Repository
+
+Clone the project:
 
 ```bash
 git clone https://github.com/stilqka-dotcom/farmoria-ecommerce.git
 cd farmoria-ecommerce
 ```
 
-## Docker Compose
+---
+
+# Docker Deployment
+
+## Environment Variables
+
+Create a `.env` file inside the `docker` directory.
+
+Example:
+
+```text
+MYSQL_DATABASE=<database>
+MYSQL_USER=<user>
+MYSQL_PASSWORD=<password>
+MYSQL_ROOT_PASSWORD=<root-password>
+WORDPRESS_PORT=8080
+```
+
+The `.env` file is intentionally excluded from Git.
+
+---
+
+## Build and Start
+
+Move into the Docker directory:
 
 ```bash
 cd docker
-docker compose up -d --build
 ```
 
-Open `http://localhost:8080`.
-
-Stop:
+Start the environment:
 
 ```bash
-docker compose down
+docker compose up -d
 ```
 
-## Kubernetes
+Docker Compose creates:
 
-From project root:
+- MariaDB container
+- WordPress container
+- Persistent Docker volumes
+
+---
+
+## Verify Docker Deployment
+
+```bash
+docker ps
+```
+
+Expected containers:
+
+- farmoria-db
+- farmoria-wordpress
+
+---
+
+# Kubernetes Deployment
+
+Return to the project root:
+
+```bash
+cd ..
+```
+
+---
+
+## Create Namespace
 
 ```bash
 kubectl apply -f k8s/namespace.yaml
+```
+
+---
+
+## Create Secrets
+
+```bash
 kubectl apply -f k8s/secrets.yaml
+```
+
+---
+
+## Create Persistent Volume Claim
+
+```bash
 kubectl apply -f k8s/pvc.yaml
+```
+
+---
+
+## Deploy MariaDB
+
+```bash
 kubectl apply -f k8s/mariadb-deployment.yaml
 kubectl apply -f k8s/mariadb-service.yaml
+```
+
+---
+
+## Deploy Redis
+
+```bash
 kubectl apply -f k8s/redis-deployment.yaml
 kubectl apply -f k8s/redis-service.yaml
+```
+
+---
+
+## Deploy WordPress
+
+```bash
 kubectl apply -f k8s/wordpress-deployment.yaml
 kubectl apply -f k8s/wordpress-service.yaml
+```
+
+---
+
+## Deploy Ingress
+
+```bash
 kubectl apply -f k8s/wordpress-ingress.yaml
 ```
 
-Check:
+---
+
+# Verify Deployment
+
+Verify all Kubernetes resources:
 
 ```bash
 kubectl get all -n farmoria
 ```
 
-## Ingress
-
-Install NGINX Ingress Controller:
+Verify storage:
 
 ```bash
-kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.11.3/deploy/static/provider/cloud/deploy.yaml
+kubectl get pvc -n farmoria
 ```
 
-Add to `/etc/hosts`:
+Verify ingress:
 
-```text
-127.0.0.1 farmoria.localdev
-127.0.0.1 www.farmoria.localdev
+```bash
+kubectl get ingress -n farmoria
 ```
 
-Start ingress tunnel:
+Verify pods:
+
+```bash
+kubectl get pods -n farmoria
+```
+
+Verify services:
+
+```bash
+kubectl get svc -n farmoria
+```
+
+---
+
+# Resource Monitoring
+
+Verify resource usage:
+
+```bash
+kubectl top nodes
+```
+
+```bash
+kubectl top pods -n farmoria
+```
+
+---
+
+# Local Access
+
+Forward the NGINX Ingress Controller:
 
 ```bash
 kubectl port-forward -n ingress-nginx svc/ingress-nginx-controller 8082:80
 ```
 
-Open `http://farmoria.localdev:8082`.
+Open:
 
-## Monitoring
+```text
+http://farmoria.localdev:8082
+```
+
+WordPress Admin:
+
+```text
+http://farmoria.localdev:8082/wp-admin
+```
+
+---
+
+# Local DNS
+
+The following entry must exist inside `/etc/hosts`:
+
+```text
+127.0.0.1 farmoria.localdev
+```
+
+---
+
+# CI/CD
+
+Every push to the `main` branch triggers GitHub Actions.
+
+The workflow:
+
+1. Checkout repository
+2. Authenticate to Docker Hub
+3. Build Docker image
+4. Push image to Docker Hub
+
+Deployment to Kubernetes is currently performed manually.
+
+---
+
+# Shutdown
+
+Docker:
 
 ```bash
-kubectl top nodes
-kubectl top pods -n farmoria
+cd docker
+docker compose down
+```
+
+Kubernetes:
+
+```bash
+kubectl delete -f k8s/
+```
+
+---
+
+# Troubleshooting
+
+Useful commands:
+
+```bash
+kubectl describe pod <pod-name> -n farmoria
+```
+
+```bash
+kubectl logs <pod-name> -n farmoria
+```
+
+```bash
+kubectl get events -n farmoria
+```
+
+```bash
+kubectl rollout restart deployment/wordpress -n farmoria
+```
+
+```bash
+kubectl rollout restart deployment/mariadb -n farmoria
+```
+
+```bash
+kubectl rollout restart deployment/redis -n farmoria
 ```
